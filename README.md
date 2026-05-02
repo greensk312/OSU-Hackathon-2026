@@ -1,1 +1,1 @@
-# OSU-Hackathon-2026
+# OSU-Hackathon-2026 : Canvas++
