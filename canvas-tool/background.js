@@ -16,7 +16,7 @@ async function testGeminiConnection() { // test connection to GEMINI
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{
-          parts: [{ text: "Respond with the word 'Connected' and nothing else." }]
+          parts: [{ text: "Respond with the word 'Connected' and nothing else." }] // prompt to gemini model
         }]
       })
     });
