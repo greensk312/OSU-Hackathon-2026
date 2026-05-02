@@ -1,0 +1,160 @@
+/* ── Base ── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 340px;
+  min-height: 200px;
+  font-family: -apple-system, "Segoe UI", Helvetica, sans-serif;
+  font-size: 13px;
+  color: #1a1a2e;
+  background: #f8f8fb;
+}
+
+/* ── Views ── */
+.view {
+  padding: 16px;
+}
+.hidden {
+  display: none !important;
+}
+
+/* ── Header ── */
+.header {
+  margin-bottom: 16px;
+}
+.header h1 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+  letter-spacing: -0.3px;
+}
+.header .subtitle {
+  color: #6b7084;
+  margin-top: 2px;
+  font-size: 12px;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+.user-name {
+  font-size: 12px;
+  color: #6b7084;
+}
+
+/* ── Setup form ── */
+.setup-form label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b7084;
+  margin-bottom: 4px;
+  margin-top: 12px;
+}
+.setup-form input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1.5px solid #d1d5e0;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #fff;
+  color: #1a1a2e;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.setup-form input:focus {
+  border-color: #3b5bdb;
+}
+.help-text {
+  font-size: 11px;
+  color: #8b90a0;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+/* ── Buttons ── */
+button {
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+#save-btn {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px;
+  background: #3b5bdb;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+#save-btn:hover {
+  background: #2b4bc8;
+}
+.btn-small {
+  font-size: 11px;
+  padding: 4px 10px;
+  background: #e8eaf0;
+  color: #4a4e69;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+.btn-small:hover {
+  background: #d1d5e0;
+}
+
+/* ── Errors ── */
+.error {
+  color: #e03131;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+/* ── Course list ── */
+.courses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.loading {
+  color: #8b90a0;
+  text-align: center;
+  padding: 24px 0;
+}
+.course-card {
+  background: #fff;
+  border: 1.5px solid #e8eaf0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.course-card:hover {
+  border-color: #3b5bdb;
+  box-shadow: 0 1px 4px rgba(59, 91, 219, 0.1);
+}
+.course-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #1a1a2e;
+}
+.course-code {
+  font-size: 11px;
+  color: #8b90a0;
+  margin-top: 2px;
+}
+.no-courses {
+  color: #8b90a0;
+  text-align: center;
+  padding: 24px 0;
+}

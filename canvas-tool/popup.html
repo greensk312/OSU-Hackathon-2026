@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canvas Multitool</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+  <!-- Setup screen: shown when no API token is saved yet -->
+  <div id="setup-view" class="view">
+    <div class="header">
+      <h1>Canvas Multitool</h1>
+      <p class="subtitle">Connect your Canvas account to get started.</p>
+    </div>
+    <div class="setup-form">
+      <label for="api-url">Canvas URL</label>
+      <input type="text" id="api-url" placeholder="canvas.instructure.com" value="canvas.instructure.com">
+
+      <label for="api-token">API Token</label>
+      <input type="password" id="api-token" placeholder="Paste your access token">
+
+      <p class="help-text">
+        Generate a token: Account → Settings → New Access Token
+      </p>
+
+      <button id="save-btn">Connect</button>
+      <p id="setup-error" class="error hidden"></p>
+    </div>
+  </div>
+
+  <!-- Main screen: shown after successful connection -->
+  <div id="main-view" class="view hidden">
+    <div class="header">
+      <h1>Canvas Multitool</h1>
+      <div class="header-actions">
+        <span id="user-name" class="user-name"></span>
+        <button id="disconnect-btn" class="btn-small">Disconnect</button>
+      </div>
+    </div>
+
+    <div id="courses-list" class="courses-list">
+      <p class="loading">Loading courses...</p>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
