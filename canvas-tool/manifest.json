@@ -30,11 +30,3 @@
     }
   ]
 }
-  }, 
-  "content_scripts": [ 
-    {
-    "matches": ["https://*.instructure.com/*"],
-    "js": ["content.js"]
-    }
-  ]
-}
