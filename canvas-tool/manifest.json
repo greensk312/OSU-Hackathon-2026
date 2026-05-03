@@ -41,6 +41,7 @@
         "level-system/level-box.js",
         "study-material/course-buttons.js",
         "study-material/course-home-buttons.js",
+        "canvas-data-fetcher.js",
         "content.js"
       ]
     }

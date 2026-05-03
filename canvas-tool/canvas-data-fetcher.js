@@ -90,10 +90,67 @@ async function analyzeCourseWithAI(courseId) {
 }
 
 async function saveAnalysis(courseId, analysis) {
+  return new Promise(function(resolve) {
 
+    chrome.storage.local.get('courseAnalyses', function(result) {
+
+      const existing = result.courseAnalyses || {};
+      
+      existing[courseId] = analysis;
+      
+      chrome.storage.local.set({ courseAnalyses: existing }, function() {
+        resolve({ success: true });
+      });
+    });
+  });
 }
 
-async function canvasFetch(endpoint, token, baseUrl) {
+async function analyzeAllCourses() {
+  const token = await getStoredToken();
+  if (!token) return;
+
+  const apiBase = window.location.origin + '/api/v1';
+  
+  let courses;
+  try {
+    courses = await canvasFetchData('/courses?enrollment_state=active&per_page=50', token, apiBase);
+    if (!courses.success) return;
+    courses = courses.data;
+  } catch(e) {
+    console.warn('Canvas++: Could not fetch courses', e);
+    return;
+  }
+
+  for (const course of courses) {
+    const cached = await getCachedAnalysis(course.id);
+    
+    if (cached) {
+      console.log('Canvas++: Analysis already cached for', course.name);
+      continue; 
+    }
+
+    console.log('Canvas++: Analyzing', course.name, '...');
+    const result = await analyzeCourseWithAI(course.id);
+    
+    if (result.success) {
+      await saveAnalysis(course.id, result.data);
+      console.log('Canvas++: Saved analysis for', course.name);
+    } else {
+      console.warn('Canvas++: Failed to analyze', course.name, result.error);
+    }
+  }
+}
+
+async function getCachedAnalysis(courseId) {
+  return new Promise(function(resolve) {
+    chrome.storage.local.get('courseAnalyses', function(result) {
+      const existing = result.courseAnalyses || {};
+      resolve(existing[courseId] || null);
+    });
+  });
+}
+
+async function canvasFetchData(endpoint, token, baseUrl) {
   try {
     const url = baseUrl + endpoint;
     const response = await fetch(url, {
@@ -128,7 +185,7 @@ async function fetchCourseInfo(courseId) {
 
   const baseUrl = getCanvasBaseUrl();
   // include[]=syllabus_body tells Canvas to include the syllabus in the response
-  const result = await canvasFetch(
+  const result = await canvasFetchData(
     '/api/v1/courses/' + courseId + '?include[]=syllabus_body',
     token,
     baseUrl
@@ -164,7 +221,7 @@ async function fetchAssignments(courseId) {
   let hasMore = true;
 
   while (hasMore) {
-    const result = await canvasFetch(endpoint, token, baseUrl);
+    const result = await canvasFetchData(endpoint, token, baseUrl);
     if (!result.success) return result;
 
     // Format each assignment into the shape the backend expects
