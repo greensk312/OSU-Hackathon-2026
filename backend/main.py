@@ -24,9 +24,11 @@ model = genai.GenerativeModel("gemini-2.5-flash")
 
 class QuizRequest(BaseModel):
     analysis: dict
+    topic: str | None = None
 
 class FlashcardRequest(BaseModel):
     analysis: dict
+    topic: str | None = None
 
 class ClassData(BaseModel):
     syllabus_text: str
@@ -39,10 +41,19 @@ def ping():
 
 @app.post("/generate/quiz")
 def generate_quiz(body: QuizRequest):
+    topic_line = f"Focus the questions specifically on this topic: {body.topic}" if body.topic else "Cover the course broadly based on the current focus and key terms."
+
+
     prompt = f"""
     You are a quiz generator for a college student. Using the course analysis below, generate a 5 question
     multiple choice quiz. Questions should reflect the current focus and upcoming topics, using the 
     suggested question types and key terms where appropriate. Difficulty should match the mastery level hint.
+    The "Topic" below is VERY important. if it says cover the course broadly, just make a general quiz based off the course analysis.
+    However, if it has something (ex: Double Integrals) then the quiz should be centered around that topic and
+    use the course analysis as extra support. All questions should support learning of that topic. 
+
+    Topic:
+    {topic_line}
 
     Course Analysis:
     {json.dumps(body.analysis, indent=2)}
@@ -80,10 +91,18 @@ def generate_quiz(body: QuizRequest):
     
 @app.post("/generate/flashcards")
 def generate_flashcards(body: FlashcardRequest):
+    topic_line = f"Focus the flashcards specifically on this topic: {body.topic}" if body.topic else "Cover the course broadly based on the current focus and key terms."
+
     prompt = f"""
     You are a flashcard generator for a college student. Using the course analysis below, generate 10
     flashcards that cover the most important concepts, key terms, and topics the student needs to know.
     Prioritize current focus areas and upcoming topics. Difficulty should match the mastery level hint.
+    The "Topic" below is VERY important. if it says cover the course broadly, just make general flashcards based off the course analysis.
+    However, if it has something (ex: Double Integrals) then the flashcards should be centered around that topic and
+    use the course analysis as extra support. All flashcards should support learning of that topic. 
+    
+    Topic:
+    {topic_line}
 
     Course Analysis:
     {json.dumps(body.analysis, indent=2)}
