@@ -44,6 +44,12 @@ function addCourseButtons(containers) {
     container.style.height = 'auto';
     container.style.overflow = 'visible';
 
+    // Make a new container to store the buttons
+    var buttonBar = document.createElement('div')
+    buttonBar.style.display = "flex"
+    buttonBar.style.gap = "8px"
+    buttonBar.style.padding = "4px 8px"
+
     // -- Quiz button --
     var quizButton = document.createElement('a');
     quizButton.textContent = 'Quizzes';
@@ -85,8 +91,11 @@ function addCourseButtons(containers) {
     ].join(' ');
 
     // Append both buttons to the course card
-    container.appendChild(quizButton);
-    container.appendChild(flashCardButton);
+    buttonBar.appendChild(quizButton);
+    buttonBar.appendChild(flashCardButton);
+
+    // Append the new container below the action container
+    container.insertAdjacentElement('afterend', buttonBar)
   });
 }
 
