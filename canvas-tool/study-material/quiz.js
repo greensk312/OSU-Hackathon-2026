@@ -177,6 +177,12 @@ function showResults() {
   document.getElementById('score-text').textContent =
     `You got ${score} out of ${questions.length} correct.`;
 
+  window.postMessage({
+    type: 'QUIZ_COMPLETE',
+    score: score,
+    total: questions.length
+  }, '*')
+
   document.getElementById('retry-btn').onclick = () => {
     renderQuiz({ questions });
   };

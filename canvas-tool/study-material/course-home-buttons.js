@@ -88,7 +88,6 @@ async function openStudyPanel(type, courseId) {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = chrome.runtime.getURL(`study-material/${type}.css`);
-      console.log('injecting stylesheet:', link.href);
       document.head.appendChild(link);
 
       const script = document.createElement('script');
