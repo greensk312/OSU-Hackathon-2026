@@ -126,6 +126,7 @@ function observeCourseCards() {
       // Don't disconnect! Keep watching so buttons come back on re-renders.
       // addCourseButtons() handles deduplication internally.
       addCourseButtons(containers);
+      observer.disconnect()
     }
   });
 
