@@ -150,8 +150,3 @@ testBtn.addEventListener('click', () => {
     testBtn.disabled = false;
   });
 });
-function test () {
-    alert("Test passed")
-}
-
-test()
