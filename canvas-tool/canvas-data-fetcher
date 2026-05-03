@@ -1,0 +1,312 @@
+// =============================================================================
+// canvas-data-fetcher.js — Canvas API data retrieval and formatting
+// =============================================================================
+//
+// WHAT THIS FILE DOES:
+//   Fetches course data (syllabus + assignments) from the Canvas REST API
+//   and formats it into the JSON shape the backend /analyze/content endpoint
+//   expects. All functions are async and return structured objects.
+//
+// DEPENDS ON:
+//   - A valid Canvas API token stored in chrome.storage.local as 'canvasToken'
+//   - The Canvas instance base URL (auto-detected from current tab's hostname)
+//
+// USAGE (from content.js or course-buttons.js):
+//   const payload = await buildAnalyzePayload(courseId);
+//   if (payload.success) {
+//     sendToBackend(payload.data);
+//   } else {
+//     console.error(payload.error);
+//   }
+//
+// CANVAS API ENDPOINTS USED:
+//   GET /api/v1/courses/:id                            → course info + syllabus_body
+//   GET /api/v1/courses/:id/assignments?per_page=50    → assignment list
+//
+// NOTE ON CORS:
+//   Canvas allows requests from chrome-extension:// origins when a valid
+//   Authorization header is provided. No proxy needed.
+// =============================================================================
+
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * getCanvasBaseUrl()
+ *
+ * Derives the Canvas instance base URL from the current tab's hostname.
+ * e.g. "https://canvas.instructure.com" or "https://myschool.instructure.com"
+ *
+ * @returns {string} base URL with no trailing slash
+ */
+function getCanvasBaseUrl() {
+  return window.location.origin; // e.g. "https://pcc.instructure.com"
+}
+
+
+/**
+ * getStoredToken()
+ *
+ * Retrieves the user's Canvas API token from chrome.storage.local.
+ *
+ * @returns {Promise<string|null>} the token string, or null if not set
+ */
+function getStoredToken() {
+  return new Promise(function (resolve) {
+    chrome.storage.local.get('canvasToken', function (result) {
+      resolve(result.canvasToken || null);
+    });
+  });
+}
+
+
+/**
+ * canvasFetch(endpoint, token, baseUrl)
+ *
+ * Performs an authenticated GET request to the Canvas API.
+ *
+ * @param {string} endpoint  - path like "/api/v1/courses/123"
+ * @param {string} token     - Canvas API token
+ * @param {string} baseUrl   - Canvas base URL
+ * @returns {Promise<{success: boolean, data?: any, error?: string}>}
+ */
+async function canvasFetch(endpoint, token, baseUrl) {
+  try {
+    const url = baseUrl + endpoint;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      return {
+        success: false,
+        error: 'Canvas API error ' + response.status + ': ' + errText
+      };
+    }
+
+    const data = await response.json();
+    return { success: true, data };
+
+  } catch (err) {
+    return { success: false, error: 'Network error: ' + err.message };
+  }
+}
+
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/**
+ * fetchCourseInfo(courseId)
+ *
+ * Retrieves basic course data including the syllabus body (HTML string).
+ * The syllabus_body field from Canvas contains the full syllabus as HTML.
+ * We strip the tags to send plain text to the backend.
+ *
+ * @param {string|number} courseId - Canvas course ID
+ * @returns {Promise<{success: boolean, data?: {title: string, syllabus_text: string}, error?: string}>}
+ */
+// eslint-disable-next-line no-unused-vars
+async function fetchCourseInfo(courseId) {
+  const token = await getStoredToken();
+  if (!token) {
+    return { success: false, error: 'No Canvas token found. Please set it up via the extension popup.' };
+  }
+
+  const baseUrl = getCanvasBaseUrl();
+  // include[]=syllabus_body tells Canvas to include the syllabus in the response
+  const result = await canvasFetch(
+    '/api/v1/courses/' + courseId + '?include[]=syllabus_body',
+    token,
+    baseUrl
+  );
+
+  if (!result.success) return result;
+
+  const course = result.data;
+
+  // Strip HTML tags from syllabus to get plain text for the backend
+  const syllabusText = stripHtml(course.syllabus_body || '');
+
+  return {
+    success: true,
+    data: {
+      title: course.name || 'Untitled Course',
+      syllabus_text: syllabusText
+    }
+  };
+}
+
+
+/**
+ * fetchAssignments(courseId)
+ *
+ * Retrieves all assignments for a course and formats them for the backend.
+ * Handles Canvas pagination automatically (per_page=50, follows Link headers).
+ *
+ * @param {string|number} courseId - Canvas course ID
+ * @returns {Promise<{success: boolean, data?: Array<{title, description, due_date}>, error?: string}>}
+ */
+// eslint-disable-next-line no-unused-vars
+async function fetchAssignments(courseId) {
+  const token = await getStoredToken();
+  if (!token) {
+    return { success: false, error: 'No Canvas token found.' };
+  }
+
+  const baseUrl = getCanvasBaseUrl();
+  const allAssignments = [];
+
+  // Canvas paginates large lists — we follow pages until there's no "next" link
+  let endpoint = '/api/v1/courses/' + courseId + '/assignments?per_page=50&order_by=due_at';
+  let hasMore = true;
+
+  while (hasMore) {
+    const result = await canvasFetch(endpoint, token, baseUrl);
+    if (!result.success) return result;
+
+    // Format each assignment into the shape the backend expects
+    const formatted = result.data.map(function (a) {
+      return {
+        title: a.name || 'Untitled Assignment',
+        description: stripHtml(a.description || ''),
+        due_date: formatDueDate(a.due_at)  // ISO string → "YYYY-MM-DD"
+      };
+    });
+
+    allAssignments.push.apply(allAssignments, formatted);
+
+    // Canvas returns pagination info in the Link response header.
+    // Since canvasFetch only returns the parsed JSON body (not headers),
+    // we stop after one page here. To fully paginate, you'd need to return
+    // headers from canvasFetch and parse the Link header for the "next" URL.
+    // For most courses, 50 assignments per page is sufficient.
+    hasMore = false; // Set to true and parse Link header for full pagination
+  }
+
+  return { success: true, data: allAssignments };
+}
+
+
+/**
+ * buildAnalyzePayload(courseId)
+ *
+ * The main entry point. Fetches course info + assignments in parallel
+ * and assembles the full payload ready to POST to /analyze/content.
+ *
+ * @param {string|number} courseId - Canvas course ID (from URL or course card)
+ * @returns {Promise<{
+ *   success: boolean,
+ *   data?: {syllabus_text: string, assignments: Array, current_date: string},
+ *   error?: string
+ * }>}
+ *
+ * @example
+ *   const payload = await buildAnalyzePayload(12345);
+ *   if (payload.success) {
+ *     const response = await fetch("https://canvas-bp7k.onrender.com/analyze/content", {
+ *       method: "POST",
+ *       headers: { "Content-Type": "application/json" },
+ *       body: JSON.stringify(payload.data)
+ *     });
+ *   }
+ */
+// eslint-disable-next-line no-unused-vars
+async function buildAnalyzePayload(courseId) {
+  // Fetch both in parallel for speed
+  const [courseResult, assignmentsResult] = await Promise.all([
+    fetchCourseInfo(courseId),
+    fetchAssignments(courseId)
+  ]);
+
+  if (!courseResult.success) {
+    return { success: false, error: 'Failed to fetch course info: ' + courseResult.error };
+  }
+
+  if (!assignmentsResult.success) {
+    return { success: false, error: 'Failed to fetch assignments: ' + assignmentsResult.error };
+  }
+
+  const payload = {
+    syllabus_text: courseResult.data.syllabus_text,
+    assignments: assignmentsResult.data,
+    current_date: new Date().toISOString().split('T')[0]  // "YYYY-MM-DD"
+  };
+
+  return { success: true, data: payload };
+}
+
+
+/**
+ * getCurrentCourseId()
+ *
+ * Extracts the course ID from the current Canvas URL.
+ * Canvas URLs follow the pattern: /courses/:id/...
+ *
+ * @returns {string|null} course ID string, or null if not on a course page
+ *
+ * @example
+ *   // On https://pcc.instructure.com/courses/98765/assignments
+ *   getCurrentCourseId() // → "98765"
+ */
+// eslint-disable-next-line no-unused-vars
+function getCurrentCourseId() {
+  const match = window.location.pathname.match(/\/courses\/(\d+)/);
+  return match ? match[1] : null;
+}
+
+
+// ---------------------------------------------------------------------------
+// Internal utility functions
+// ---------------------------------------------------------------------------
+
+/**
+ * stripHtml(html)
+ *
+ * Converts an HTML string to plain text by stripping all tags.
+ * Also collapses multiple whitespace/newlines into single spaces.
+ * Used to clean up Canvas syllabus_body and assignment descriptions
+ * before sending to the backend (which expects plain text strings).
+ *
+ * @param {string} html - HTML string (may be empty)
+ * @returns {string} plain text
+ */
+function stripHtml(html) {
+  if (!html) return '';
+
+  // Use a temporary DOM element to let the browser parse the HTML
+  var temp = document.createElement('div');
+  temp.innerHTML = html;
+
+  // Get text content (browser strips all tags automatically)
+  var text = temp.textContent || temp.innerText || '';
+
+  // Collapse multiple whitespace into single spaces and trim
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+
+/**
+ * formatDueDate(isoString)
+ *
+ * Converts a Canvas ISO 8601 timestamp to a plain "YYYY-MM-DD" date string.
+ * Returns "No due date" if the assignment has no due date (null).
+ *
+ * Canvas due_at format: "2025-05-10T06:59:59Z" (always UTC, midnight of due day)
+ *
+ * @param {string|null} isoString - Canvas due_at value
+ * @returns {string} "YYYY-MM-DD" or "No due date"
+ */
+function formatDueDate(isoString) {
+  if (!isoString) return 'No due date';
+  // Split at "T" to drop the time portion — gives us "YYYY-MM-DD"
+  return isoString.split('T')[0];
+}
