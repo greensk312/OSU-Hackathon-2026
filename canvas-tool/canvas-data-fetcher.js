@@ -61,17 +61,38 @@ function getStoredToken() {
   });
 }
 
+async function analyzeCourseWithAI(courseId) {
+  const payload = await buildAnalyzePayload(courseId);
 
-/**
- * canvasFetch(endpoint, token, baseUrl)
- *
- * Performs an authenticated GET request to the Canvas API.
- *
- * @param {string} endpoint  - path like "/api/v1/courses/123"
- * @param {string} token     - Canvas API token
- * @param {string} baseUrl   - Canvas base URL
- * @returns {Promise<{success: boolean, data?: any, error?: string}>}
- */
+  if(!payload.success){
+    return {
+      success: false,
+      error: payload.error
+    };
+  }
+
+  const response = await fetch('https://canvas-bp7k.onrender.com/analyze/content', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload.data)
+  });
+
+  if(!response.ok){
+    return {
+      success: false,
+      error: "Error getting AI response from backend"
+    };
+  }
+
+  const analysis = await response.json();
+
+  return { success: true, data: analysis };
+}
+
+async function saveAnalysis(courseId, analysis) {
+
+}
+
 async function canvasFetch(endpoint, token, baseUrl) {
   try {
     const url = baseUrl + endpoint;
@@ -99,22 +120,6 @@ async function canvasFetch(endpoint, token, baseUrl) {
   }
 }
 
-
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
-/**
- * fetchCourseInfo(courseId)
- *
- * Retrieves basic course data including the syllabus body (HTML string).
- * The syllabus_body field from Canvas contains the full syllabus as HTML.
- * We strip the tags to send plain text to the backend.
- *
- * @param {string|number} courseId - Canvas course ID
- * @returns {Promise<{success: boolean, data?: {title: string, syllabus_text: string}, error?: string}>}
- */
-// eslint-disable-next-line no-unused-vars
 async function fetchCourseInfo(courseId) {
   const token = await getStoredToken();
   if (!token) {
@@ -145,17 +150,6 @@ async function fetchCourseInfo(courseId) {
   };
 }
 
-
-/**
- * fetchAssignments(courseId)
- *
- * Retrieves all assignments for a course and formats them for the backend.
- * Handles Canvas pagination automatically (per_page=50, follows Link headers).
- *
- * @param {string|number} courseId - Canvas course ID
- * @returns {Promise<{success: boolean, data?: Array<{title, description, due_date}>, error?: string}>}
- */
-// eslint-disable-next-line no-unused-vars
 async function fetchAssignments(courseId) {
   const token = await getStoredToken();
   if (!token) {
@@ -195,31 +189,6 @@ async function fetchAssignments(courseId) {
   return { success: true, data: allAssignments };
 }
 
-
-/**
- * buildAnalyzePayload(courseId)
- *
- * The main entry point. Fetches course info + assignments in parallel
- * and assembles the full payload ready to POST to /analyze/content.
- *
- * @param {string|number} courseId - Canvas course ID (from URL or course card)
- * @returns {Promise<{
- *   success: boolean,
- *   data?: {syllabus_text: string, assignments: Array, current_date: string},
- *   error?: string
- * }>}
- *
- * @example
- *   const payload = await buildAnalyzePayload(12345);
- *   if (payload.success) {
- *     const response = await fetch("https://canvas-bp7k.onrender.com/analyze/content", {
- *       method: "POST",
- *       headers: { "Content-Type": "application/json" },
- *       body: JSON.stringify(payload.data)
- *     });
- *   }
- */
-// eslint-disable-next-line no-unused-vars
 async function buildAnalyzePayload(courseId) {
   // Fetch both in parallel for speed
   const [courseResult, assignmentsResult] = await Promise.all([
@@ -244,41 +213,13 @@ async function buildAnalyzePayload(courseId) {
   return { success: true, data: payload };
 }
 
-
-/**
- * getCurrentCourseId()
- *
- * Extracts the course ID from the current Canvas URL.
- * Canvas URLs follow the pattern: /courses/:id/...
- *
- * @returns {string|null} course ID string, or null if not on a course page
- *
- * @example
- *   // On https://pcc.instructure.com/courses/98765/assignments
- *   getCurrentCourseId() // → "98765"
- */
-// eslint-disable-next-line no-unused-vars
 function getCurrentCourseId() {
   const match = window.location.pathname.match(/\/courses\/(\d+)/);
   return match ? match[1] : null;
 }
 
-
-// ---------------------------------------------------------------------------
 // Internal utility functions
-// ---------------------------------------------------------------------------
 
-/**
- * stripHtml(html)
- *
- * Converts an HTML string to plain text by stripping all tags.
- * Also collapses multiple whitespace/newlines into single spaces.
- * Used to clean up Canvas syllabus_body and assignment descriptions
- * before sending to the backend (which expects plain text strings).
- *
- * @param {string} html - HTML string (may be empty)
- * @returns {string} plain text
- */
 function stripHtml(html) {
   if (!html) return '';
 
@@ -293,18 +234,6 @@ function stripHtml(html) {
   return text.replace(/\s+/g, ' ').trim();
 }
 
-
-/**
- * formatDueDate(isoString)
- *
- * Converts a Canvas ISO 8601 timestamp to a plain "YYYY-MM-DD" date string.
- * Returns "No due date" if the assignment has no due date (null).
- *
- * Canvas due_at format: "2025-05-10T06:59:59Z" (always UTC, midnight of due day)
- *
- * @param {string|null} isoString - Canvas due_at value
- * @returns {string} "YYYY-MM-DD" or "No due date"
- */
 function formatDueDate(isoString) {
   if (!isoString) return 'No due date';
   // Split at "T" to drop the time portion — gives us "YYYY-MM-DD"
