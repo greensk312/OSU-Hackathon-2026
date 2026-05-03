@@ -37,7 +37,7 @@ function addCourseButtons(containers) {
   containers.forEach(function (container) {
     // Skip containers that already have our buttons (prevents duplicates
     // when the observer fires multiple times on the same cards)
-    if (container.querySelector('.cst-study-btn')) return;
+    if (container.nextElementSibling && container.nextElementSibling.querySelector('.cst-study-btn')) return;
 
     // Canvas sets a fixed height on these containers — override it so
     // our extra buttons don't get clipped/hidden
