@@ -68,7 +68,6 @@ def generate_quiz(body: QuizRequest):
     """
 
     response = model.generate_content(prompt)
-    quiz = json.loads(response.text)
 
     raw = response.text.strip()
     if raw.startswith("```"):
