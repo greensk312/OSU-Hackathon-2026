@@ -152,7 +152,7 @@ def analyze_content(body: ClassData):
         "course_progress_summary": "1-2 paragraphs describing what the student has studied so far and what they are currently learning, informed by assignment due dates",
         "current_focus": "1 paragraph on what the student should be focusing on right now given upcoming due dates",
         "upcoming_topics": ["short list of topics or concepts coming up soon based on due dates"],
-        "key_terms": ["important vocabulary, formulas, or named concepts that are central to the course"],
+        "key_terms": ["important vocabulary, formulas, or named concepts that are central to the course. Give a MAXIMUM of 5 key terms. These should be large important topics you can make a quiz/ flashcart set out of"],
         "suggested_question_types": ["types of questions that suit this material, e.g. conceptual, proof-based, application, definition"],
         "mastery_level_hint": "one of: foundational, developing, advanced — based on where the student is in the course"
     }}
