@@ -11,8 +11,8 @@
 //   Chrome extensions can't use ES module imports (import/export) in content
 //   scripts. Instead, manifest.json lists multiple JS files to load in order:
 //
-//     1. level-system/xp-calculator.js  — defines getXPState(), calculateAssignmentXP()
-//     2. level-system/level-box.js      — defines injectLevelBox()
+//     1. level-system/xp-calculator.js  — defines fetchXPState(), getCachedXPState()
+//     2. level-system/level-box.js      — defines injectLevelBox(), injectLevelBoxLoading(), etc.
 //     3. study-material/course-buttons.js — defines addCourseButtons(), observeCourseCards()
 //     4. content.js (this file)          — calls all of the above
 //
@@ -45,24 +45,90 @@ chrome.storage.local.get('canvasToken', function (result) {
 // =============================================================================
 // 2. LEVEL SYSTEM — Inject the XP progress box on the dashboard
 // =============================================================================
-// Calls injectLevelBox() from level-system/level-box.js.
-// That function checks if we're on the dashboard, finds the right-side
-// sidebar, and prepends the XP progress box above the "To Do" section.
+//
+// Flow:
+//   1. Wait for the sidebar (#right-side) to exist
+//   2. Check for a saved token
+//   3. If no token → show "no token" state
+//   4. If token exists → show loading state → try cached data first →
+//      fetch fresh data from Canvas API → render or show error
+//
+// The old version was synchronous (getXPState returned hardcoded data).
+// Now it's async because we're making real API calls, so the orchestration
+// uses Promises and the loading/error states from level-box.js.
 
 function initLevelSystem() {
-  // Safety check: make sure the level-box script loaded before us.
-  // typeof check prevents a ReferenceError if the script somehow didn't load.
-  if (typeof injectLevelBox === 'function') {
-    injectLevelBox();
+  // Safety check: make sure level-box.js loaded
+  if (typeof injectLevelBoxLoading !== 'function') return;
+
+  // Try to inject the loading state. Returns false if we're not on the
+  // dashboard or sidebar doesn't exist yet.
+  var injected = injectLevelBoxLoading();
+  if (!injected) return;
+
+  // Sidebar exists and loading box is showing — now fetch XP data
+  fetchAndRenderXP();
+}
+
+/**
+ * fetchAndRenderXP()
+ *
+ * Handles the full async flow:
+ *   1. Read the token from storage
+ *   2. If no token, show the no-token state
+ *   3. If cached data exists, render it immediately (fast first paint)
+ *   4. Fetch fresh data from Canvas API
+ *   5. Render fresh data (replaces cached render) or show error
+ */
+async function fetchAndRenderXP() {
+  // ── Get the token ──
+  var token = await new Promise(function (resolve) {
+    chrome.storage.local.get('canvasToken', function (result) {
+      resolve(result.canvasToken || null);
+    });
+  });
+
+  if (!token) {
+    injectLevelBoxNoToken();
+    return;
+  }
+
+  // ── Try rendering cached data first for instant feedback ──
+  if (typeof getCachedXPState === 'function') {
+    try {
+      var cached = await getCachedXPState();
+      if (cached) {
+        injectLevelBox(cached);
+        // Don't return — we still fetch fresh data below to update
+      }
+    } catch (e) {
+      // Cache miss is fine, just continue to fresh fetch
+      console.warn('Canvas Multitool: Could not load cached XP data', e);
+    }
+  }
+
+  // ── Fetch fresh data from Canvas API ──
+  if (typeof fetchXPState === 'function') {
+    try {
+      var state = await fetchXPState(token);
+      injectLevelBox(state);
+    } catch (e) {
+      console.error('Canvas Multitool: XP fetch failed', e);
+      // Only show error if we didn't already render cached data
+      if (!document.getElementById('level-box') ||
+          document.getElementById('level-box').querySelector('p[style*="Fetching"]')) {
+        injectLevelBoxError();
+      }
+    }
   }
 }
 
+
+// ── Kick off the level system ──
 // Try immediately if the DOM is already loaded
 if (document.readyState === 'loading') {
-  // DOM is still loading — wait for it to finish, then try
   document.addEventListener('DOMContentLoaded', initLevelSystem);
 } else {
-  // DOM is already ready — try right now
   initLevelSystem();
 }
 
@@ -72,7 +138,6 @@ if (document.readyState === 'loading') {
 // hit the retry limit, we stop polling.
 var levelRetryCount = 0;
 var levelRetryInterval = setInterval(function () {
-  // Stop if the box already exists OR we've tried 10 times (5 seconds)
   if (document.getElementById('level-box') || levelRetryCount > 10) {
     clearInterval(levelRetryInterval);
     return;
@@ -110,23 +175,20 @@ if (typeof observeCourseCards === 'function') {
 // parts of the extension (content scripts, popup, background worker).
 
 function showTokenModal() {
-  // Don't inject the modal twice if it already exists on the page
   if (document.getElementById('cst-modal-overlay')) return;
 
-  // -- Build the overlay (dark semi-transparent background) --
   var overlay = document.createElement('div');
   overlay.id = 'cst-modal-overlay';
   overlay.style.cssText = [
     'position: fixed;',
-    'inset: 0;',                             // shorthand for top/right/bottom/left: 0
-    'background: rgba(0, 0, 0, 0.5);',       // dark semi-transparent backdrop
-    'z-index: 99999;',                        // sit on top of everything on Canvas
+    'inset: 0;',
+    'background: rgba(0, 0, 0, 0.5);',
+    'z-index: 99999;',
     'display: flex;',
     'align-items: center;',
     'justify-content: center;'
   ].join(' ');
 
-  // -- Build the modal box (white card in the center) --
   var modal = document.createElement('div');
   modal.style.cssText = [
     'background: white;',
@@ -137,18 +199,17 @@ function showTokenModal() {
     'font-family: sans-serif;'
   ].join(' ');
 
-  // -- Modal inner HTML: title, instructions, input, save button, error text --
   modal.innerHTML = [
     '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">',
     '  <h2 style="margin: 0; font-size: 18px; color: #111;">Welcome to Canvas Study Tool</h2>',
     '  <button id="cst-close-btn" style="',
     '    background: none; border: none; font-size: 20px;',
     '    cursor: pointer; color: #888; line-height: 1; padding: 0 0 0 12px;',
-    '  ">✕</button>',
+    '  ">&#10005;</button>',
     '</div>',
     '<p style="margin: 0 0 16px; font-size: 14px; color: #555; line-height: 1.5;">',
     '  To get started, paste your Canvas API token below. You can generate one in',
-    '  Canvas under <strong>Account → Settings → Approved Integrations</strong>.',
+    '  Canvas under <strong>Account &rarr; Settings &rarr; Approved Integrations</strong>.',
     '</p>',
     '<input id="cst-token-input" type="password" placeholder="Paste your API token here"',
     '  style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;',
@@ -160,30 +221,26 @@ function showTokenModal() {
     '<p id="cst-error" style="color: #ef4444; font-size: 12px; margin-top: 8px; min-height: 16px;"></p>'
   ].join('\n');
 
-  // -- Assemble and inject into the page --
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
-  // -- Wire up the close button (X in top-right corner) --
   document.getElementById('cst-close-btn').addEventListener('click', function () {
     overlay.remove();
   });
 
-  // -- Wire up the save button --
   document.getElementById('cst-save-btn').addEventListener('click', function () {
     var token = document.getElementById('cst-token-input').value.trim();
     var error = document.getElementById('cst-error');
 
-    // Validate: don't save an empty string
     if (!token) {
       error.textContent = 'Please paste your token before saving.';
       return;
     }
 
-    // Save to chrome.storage.local — this is accessible from popup.js,
-    // background.js, and any content script in the extension
     chrome.storage.local.set({ canvasToken: token }, function () {
-      overlay.remove(); // dismiss the modal on success
+      overlay.remove();
+      // Token was just saved — kick off the level system now
+      initLevelSystem();
     });
   });
 }
