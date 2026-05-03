@@ -163,6 +163,7 @@ if (typeof observeCourseCards === 'function') {
   observeCourseCards();
 }
 
+observeCourseHomeSidebar();
 
 // =============================================================================
 // 4. TOKEN MODAL — Prompt the user to enter their Canvas API token
