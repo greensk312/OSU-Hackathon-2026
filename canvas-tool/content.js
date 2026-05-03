@@ -28,12 +28,7 @@
 // =============================================================================
 
 
-// =============================================================================
-// 1. TOKEN CHECK — Make sure the user has connected their Canvas account
-// =============================================================================
-// On every Canvas page load, we check chrome.storage.local for a saved API
-// token. If there isn't one, we show a modal asking the user to paste theirs.
-// This is the first thing that runs because nothing else works without a token.
+analyzeAllCourses();
 
 chrome.storage.local.get('canvasToken', function (result) {
   if (!result.canvasToken) {
@@ -41,6 +36,16 @@ chrome.storage.local.get('canvasToken', function (result) {
   }
 });
 
+window.addEventListener('message', (event) => {
+  if(event.data.type === 'QUIZ_COMPLETE') {
+    const bonusXP = event.data.score * 5;
+
+    chrome.storage.local.get('quizBonusXP', (result) => {
+        const current = result.quizBonusXP || 0;
+        chrome.storage.local.set({ quizBonusXP: current + bonusXP });
+    });
+  }
+});
 
 // =============================================================================
 // 2. LEVEL SYSTEM — Inject the XP progress box on the dashboard
@@ -163,6 +168,7 @@ if (typeof observeCourseCards === 'function') {
   observeCourseCards();
 }
 
+observeCourseHomeSidebar();
 
 // =============================================================================
 // 4. TOKEN MODAL — Prompt the user to enter their Canvas API token

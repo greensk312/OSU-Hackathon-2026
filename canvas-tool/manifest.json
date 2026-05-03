@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Canvas Multitool",
+  "name": "Canvas++",
   "version": "0.2.1",
-  "description": "A student-built multitool for Canvas LMS",
+  "description": "An AI powered study assistant built right into Canvas",
   "permissions": [
     "storage"
   ],
@@ -14,7 +14,9 @@
     {
       "resources": [
         "study-material/quiz.html",
-        "study-material/flashcards.html"
+        "study-material/flashcards.html",
+        "study-material/quiz.css",
+        "study-material/quiz.js"
       ],
       "matches": ["https://*.instructure.com/*"]
     }
@@ -40,6 +42,8 @@
         "level-system/xp-calculator.js",
         "level-system/level-box.js",
         "study-material/course-buttons.js",
+        "study-material/course-home-buttons.js",
+        "canvas-data-fetcher.js",
         "content.js"
       ]
     }

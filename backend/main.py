@@ -20,13 +20,15 @@ app.add_middleware(
 )
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = genai.GenerativeModel("gemini-2.5-flash")
 
 class QuizRequest(BaseModel):
     analysis: dict
+    topic: str | None = None
 
 class FlashcardRequest(BaseModel):
     analysis: dict
+    topic: str | None = None
 
 class ClassData(BaseModel):
     syllabus_text: str
@@ -39,10 +41,19 @@ def ping():
 
 @app.post("/generate/quiz")
 def generate_quiz(body: QuizRequest):
+    topic_line = f"Focus the questions specifically on this topic: {body.topic}" if body.topic else "Cover the course broadly based on the current focus and key terms."
+
+
     prompt = f"""
     You are a quiz generator for a college student. Using the course analysis below, generate a 5 question
     multiple choice quiz. Questions should reflect the current focus and upcoming topics, using the 
     suggested question types and key terms where appropriate. Difficulty should match the mastery level hint.
+    The "Topic" below is VERY important. if it says cover the course broadly, just make a general quiz based off the course analysis.
+    However, if it has something (ex: Double Integrals) then the quiz should be centered around that topic and
+    use the course analysis as extra support. All questions should support learning of that topic. 
+
+    Topic:
+    {topic_line}
 
     Course Analysis:
     {json.dumps(body.analysis, indent=2)}
@@ -68,15 +79,30 @@ def generate_quiz(body: QuizRequest):
     """
 
     response = model.generate_content(prompt)
-    quiz = json.loads(response.text)
+
+    raw = response.text.strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1] 
+        raw = raw.rsplit("```", 1)[0]
+    quiz = json.loads(raw)
+
+
     return quiz
     
 @app.post("/generate/flashcards")
 def generate_flashcards(body: FlashcardRequest):
+    topic_line = f"Focus the flashcards specifically on this topic: {body.topic}" if body.topic else "Cover the course broadly based on the current focus and key terms."
+
     prompt = f"""
     You are a flashcard generator for a college student. Using the course analysis below, generate 10
     flashcards that cover the most important concepts, key terms, and topics the student needs to know.
     Prioritize current focus areas and upcoming topics. Difficulty should match the mastery level hint.
+    The "Topic" below is VERY important. if it says cover the course broadly, just make general flashcards based off the course analysis.
+    However, if it has something (ex: Double Integrals) then the flashcards should be centered around that topic and
+    use the course analysis as extra support. All flashcards should support learning of that topic. 
+    
+    Topic:
+    {topic_line}
 
     Course Analysis:
     {json.dumps(body.analysis, indent=2)}
@@ -96,7 +122,13 @@ def generate_flashcards(body: FlashcardRequest):
     """
 
     response = model.generate_content(prompt)
-    flashcards = json.loads(response.text)
+
+    raw = response.text.strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1] 
+        raw = raw.rsplit("```", 1)[0]
+    flashcards = json.loads(raw)
+
     return flashcards
 
 @app.post("/analyze/content")
@@ -120,12 +152,18 @@ def analyze_content(body: ClassData):
         "course_progress_summary": "1-2 paragraphs describing what the student has studied so far and what they are currently learning, informed by assignment due dates",
         "current_focus": "1 paragraph on what the student should be focusing on right now given upcoming due dates",
         "upcoming_topics": ["short list of topics or concepts coming up soon based on due dates"],
-        "key_terms": ["important vocabulary, formulas, or named concepts that are central to the course"],
+        "key_terms": ["important vocabulary, formulas, or named concepts that are central to the course. Give a MAXIMUM of 5 key terms. These should be large important topics you can make a quiz/ flashcart set out of"],
         "suggested_question_types": ["types of questions that suit this material, e.g. conceptual, proof-based, application, definition"],
         "mastery_level_hint": "one of: foundational, developing, advanced — based on where the student is in the course"
     }}
     """
 
     response = model.generate_content(prompt)
-    analysis = json.loads(response.text)
+
+    raw = response.text.strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1] 
+        raw = raw.rsplit("```", 1)[0]
+    analysis = json.loads(raw)
+
     return analysis
