@@ -73,11 +73,17 @@ function openStudyPanel(type, courseId) {
     'overflow-y: auto;',
   ].join(' ');
 
-  fetch(chrome.runtime.getURL(`study-material/${type}.html`))
+  fetch(chrome.runtime.getURL(`study-material/${type}.html`) + '?courseId=' + courseId)
     .then(r => r.text())
     .then(html => {
       panel.innerHTML = html;
       mainContent.style.position = 'relative';
       mainContent.appendChild(panel);
+
+      panel.dataset.courseId = courseId;
+
+      const script = document.createElement('script');
+      script.src = chrome.runtime.getURL('study-material/quiz.js');
+      panel.appendChild(script);
     });
 }
