@@ -150,3 +150,31 @@ testBtn.addEventListener('click', () => {
     testBtn.disabled = false;
   });
 });
+
+// This function adds the quizzes and flashcards buttons to each course card in the dashboard
+function addCourseButtons(containers) {
+  containers.forEach(function(container) {
+    let quizButton = document.createElement("a") // This anchor tag is a link to the URL quiz.html when clicked. This is our "button"
+    quizButton.textContent = "Quizzes" // This is the name of the button
+    quizButton.href = chrome.runtime.getURL("quiz.html") // This is the file/URL that the button will take to you
+    quizButton.style.cssText = "display:block; padding:4px 8px; background:#0770A3; color:white; border-radius:4px; text-decoration:none; font-size:12px; margin-top:4px;"
+
+    let flashCardButton = document.createElement("a")
+    flashCardButton.textContent = "Flashcards"
+    flashCardButton.href = chrome.runtime.getURL("flashcard.html")
+    flashCardButton.style.cssText = "display:block; padding:4px 8px; background:#0770A3; color:white; border-radius:4px; text-decoration:none; font-size:12px; margin-top:4px;"
+
+    container.appendChild(quizButton) // I think this is for the mutation observer below
+    container.appendChild(flashCardButton) //  "  "
+  })
+}
+
+let observer = new MutationObserver(function() {
+  let containers = document.querySelectorAll(".ic-DashboardCard__action-container")
+  if(containers.length > 0) {
+    observer.disconnect()
+    addCourseButtons(containers)
+  }
+})
+
+observer.observe(document.body, {childList: true, subtree: true})
