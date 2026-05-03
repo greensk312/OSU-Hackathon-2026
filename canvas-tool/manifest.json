@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Canvas Multitool",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "description": "A student-built multitool for Canvas LMS",
   "permissions": [
     "storage"
@@ -12,7 +12,10 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["quiz.html", "flashcards.html"],
+      "resources": [
+        "study-material/quiz.html",
+        "study-material/flashcards.html"
+      ],
       "matches": ["https://*.instructure.com/*"]
     }
   ],
@@ -25,14 +28,20 @@
     }
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
-  "content_scripts": [ 
+  "content_scripts": [
     {
       "matches": [
         "https://*.instructure.com/*"
       ],
-      "js": ["content.js"]
+      "js": [
+        "level-system/xp-calculator.js",
+        "level-system/level-box.js",
+        "study-material/course-buttons.js",
+        "content.js"
+      ]
     }
   ]
 }
