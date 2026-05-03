@@ -10,6 +10,12 @@
     "https://*.instructure.com/*",
     "https://generativelanguage.googleapis.com/*"
   ],
+  "web_accessible_resources": [
+    {
+      "resources": ["quiz.html", "flashcards.html"],
+      "matches": ["https://*.instructure.com/*"]
+    }
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
