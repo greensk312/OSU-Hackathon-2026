@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Canvas Multitool",
+  "name": "Canvas++",
   "version": "0.2.1",
-  "description": "A student-built multitool for Canvas LMS",
+  "description": "An AI powered study assistant built right into Canvas",
   "permissions": [
     "storage"
   ],
