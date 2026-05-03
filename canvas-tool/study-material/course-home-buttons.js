@@ -57,7 +57,7 @@ function getCourseName() {
   return crumb ? crumb.textContent.trim() : null;
 }
 
-function openStudyPanel(type, courseId) {
+async function openStudyPanel(type, courseId) {
   if (document.querySelector('#cst-study-panel')) return;
 
   const mainContent = document.getElementById('main');
@@ -73,11 +73,25 @@ function openStudyPanel(type, courseId) {
     'overflow-y: auto;',
   ].join(' ');
 
+  const analysis = await getCachedAnalysis(courseId);
+
   fetch(chrome.runtime.getURL(`study-material/${type}.html`))
     .then(r => r.text())
     .then(html => {
       panel.innerHTML = html;
       mainContent.style.position = 'relative';
       mainContent.appendChild(panel);
+
+      panel.dataset.courseId = courseId;
+      panel.dataset.analysis = JSON.stringify(analysis);
+
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = chrome.runtime.getURL(`study-material/${type}.css`);
+      document.head.appendChild(link);
+
+      const script = document.createElement('script');
+      script.src = chrome.runtime.getURL(`study-material/${type}.js`);
+      panel.appendChild(script);
     });
 }

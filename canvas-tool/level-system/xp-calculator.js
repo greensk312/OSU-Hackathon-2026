@@ -36,31 +36,12 @@
 
 
 // ── XP Constants (from the spec) ──
-var XP_PER_SUBMISSION = 50;
-var XP_GRADE_MULTIPLIER = 100;
-var XP_PER_LEVEL = 200;
+const XP_PER_SUBMISSION = 50;
+const XP_GRADE_MULTIPLIER = 100;
+const XP_PER_LEVEL = 200;
 
 
-/**
- * fetchXPState(token)
- *
- * The main entry point. Fetches all Canvas data, calculates XP, determines
- * level, caches the result, and returns the state object for rendering.
- *
- * This is ASYNC (returns a Promise) — content.js must await it or use .then().
- *
- * @param {string} token — the user's Canvas API token
- * @returns {Promise<Object>} resolves to:
- *   {
- *     level: number,
- *     currentXP: number,        — XP progress into the current level
- *     xpForNextLevel: number,   — XP needed to complete the current level
- *     totalXP: number,          — lifetime XP across all assignments
- *     tasks: Array<{name, xp, dueAt, courseId, assignmentId}>,
- *     earnedAssignments: number  — count of assignments that awarded XP
- *   }
- */
-// eslint-disable-next-line no-unused-vars
+
 async function fetchXPState(token) {
   var apiBase = window.location.origin + '/api/v1';
 
@@ -84,7 +65,7 @@ async function fetchXPState(token) {
       );
     } catch (e) {
       // If we can't access a course's assignments (permissions, etc.), skip it
-      console.warn('Canvas Multitool: Could not fetch assignments for course ' + courseId, e);
+      console.warn('Canvas++ : Could not fetch assignments for course ' + courseId, e);
       continue;
     }
 
@@ -156,22 +137,28 @@ async function fetchXPState(token) {
   // Cap at 5 tasks per the spec
   var tasks = pendingTasks.slice(0, 5);
 
-  // ── Step 5: Calculate level from total XP ──
-  var levelInfo = calculateLevel(totalXP);
+  // ── Step 5: Get quiz bonus XP ──
+  const bonusXP = await new Promise(resolve => {
+    chrome.storage.local.get('quizBonusXP', result => {
+      resolve(result.quizBonusXP || 0);
+    });
+  });
 
-  // ── Step 6: Build and cache the state object ──
+  // ── Step 6: Calculate level from total XP + bonus ──
+  const finalTotalXP = totalXP + bonusXP;
+  const levelInfo = calculateLevel(finalTotalXP);
+
+  // ── Step 7: Build and cache the state object ──
   var state = {
     level: levelInfo.level,
     currentXP: levelInfo.currentXP,
     xpForNextLevel: levelInfo.xpForNextLevel,
-    totalXP: totalXP,
+    totalXP: finalTotalXP,
     tasks: tasks,
     earnedAssignments: earnedAssignments
   };
 
-  // Cache in chrome.storage.local for quick re-renders on next page load
   chrome.storage.local.set({ xpData: state });
-
   return state;
 }
 

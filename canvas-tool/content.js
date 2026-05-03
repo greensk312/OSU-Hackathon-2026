@@ -36,6 +36,16 @@ chrome.storage.local.get('canvasToken', function (result) {
   }
 });
 
+window.addEventListener('message', (event) => {
+  if(event.data.type === 'QUIZ_COMPLETE') {
+    const bonusXP = event.data.score * 5;
+
+    chrome.storage.local.get('quizBonusXP', (result) => {
+        const current = result.quizBonusXP || 0;
+        chrome.storage.local.set({ quizBonusXP: current + bonusXP });
+    });
+  }
+});
 
 // =============================================================================
 // 2. LEVEL SYSTEM — Inject the XP progress box on the dashboard

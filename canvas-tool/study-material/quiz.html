@@ -3,7 +3,6 @@
     <head>
         <title>Quizzes</title>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="quiz.css">
     </head>
     <body>
 
@@ -14,7 +13,8 @@
             </div>
         </div>
     
-        <div id="loading-screen">
+        <div id="loading-screen" style="display:none;">
+            <div id="spinner"></div>
             <p>Generating quiz...</p>
         </div>
 
@@ -22,6 +22,7 @@
             <p id="question-counter"></p>
             <h2 id="question-text"></h2>
             <div id="choices-container"></div>
+            <p id="explanation" style="display:none;"></p>
             <button id="next-btn" disabled>Next</button>
         </div>
 
@@ -29,6 +30,10 @@
             <h2>Results</h2>
             <p id="score-text"></p>
             <button id="retry-btn">Retry</button>
+        </div>
+
+        <div id="error-screen" style="display:none;">
+            <h2>Error!</h2>
         </div>
 
         <script src="quiz.js"></script>

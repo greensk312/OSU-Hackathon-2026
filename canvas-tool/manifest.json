@@ -14,7 +14,9 @@
     {
       "resources": [
         "study-material/quiz.html",
-        "study-material/flashcards.html"
+        "study-material/flashcards.html",
+        "study-material/quiz.css",
+        "study-material/quiz.js"
       ],
       "matches": ["https://*.instructure.com/*"]
     }
