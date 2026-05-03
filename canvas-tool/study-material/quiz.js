@@ -64,8 +64,11 @@ function buildTopicSelection(analysis) {
         topicList.appendChild(btn);
     });
 
-    document.getElementById('general-quiz-btn')
-        .addEventListener('click', () => startQuiz(analysis, null));
+    document.getElementById('new-quiz-btn').onclick = () => {
+        const topicList = document.getElementById('topic-list');
+        topicList.querySelectorAll('button:not(#general-quiz-btn)').forEach(b => b.remove());
+        init();
+    }; 
 
     showScreen('selection');
 }
@@ -191,6 +194,10 @@ function showResults() {
     renderQuiz({ questions });
   };
 
+  document.getElementById('new-quiz-btn').onclick = () => {
+    document.getElementById('topic-list').innerHTML = '';
+    init();
+  };
   showScreen('results');
 }
 

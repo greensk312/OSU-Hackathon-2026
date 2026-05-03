@@ -187,7 +187,7 @@ h2 {
     margin-bottom: 1.5rem;
 }
 
-#retry-btn {
+#retry-btn, #new-quiz-btn {
     background: #fff;
     border: 1px solid #0770a3;
     color: #0770a3;
@@ -199,7 +199,7 @@ h2 {
     transition: background 0.12s;
 }
 
-#retry-btn:hover {
+#retry-btn:hover, #new-quiz-btn:hover {
     background: #e8f4fb;
 }
 
