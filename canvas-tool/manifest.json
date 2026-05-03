@@ -40,6 +40,7 @@
         "level-system/xp-calculator.js",
         "level-system/level-box.js",
         "study-material/course-buttons.js",
+        "study-material/course-home-buttons.js",
         "content.js"
       ]
     }
