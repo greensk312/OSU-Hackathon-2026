@@ -28,12 +28,7 @@
 // =============================================================================
 
 
-// =============================================================================
-// 1. TOKEN CHECK — Make sure the user has connected their Canvas account
-// =============================================================================
-// On every Canvas page load, we check chrome.storage.local for a saved API
-// token. If there isn't one, we show a modal asking the user to paste theirs.
-// This is the first thing that runs because nothing else works without a token.
+analyzeAllCourses();
 
 chrome.storage.local.get('canvasToken', function (result) {
   if (!result.canvasToken) {
