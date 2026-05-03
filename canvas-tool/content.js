@@ -151,6 +151,190 @@ testBtn.addEventListener('click', () => {
   });
 });
 
+
+// ── Level Guy: Progress Bar Box ──
+// Injects a level/XP progress box above the To Do sidebar on the Canvas dashboard
+
+function injectLevelBox() {
+  // Only inject on the dashboard
+  if (!window.location.pathname.match(/^\/$|^\/$/)) {
+    // Also check for /courses or explicit dashboard path
+    if (!window.location.pathname.includes('dashboard') && window.location.pathname !== '/') {
+      return;
+    }
+  }
+
+  // Find the right sidebar — Canvas uses a #right-side div for the To Do section
+  const rightSide = document.getElementById('right-side');
+  if (!rightSide) return;
+
+  // Don't inject twice
+  if (document.getElementById('level-box')) return;
+
+  // ── Placeholder data (replace with real XP calc later) ──
+  const level = 3;
+  const currentXP = 340;
+  const xpForNextLevel = 500;
+  const progressPercent = Math.round((currentXP / xpForNextLevel) * 100);
+  const userName = 'Student'; // pull from profile API later
+
+  // ── Build the box ──
+  const levelBox = document.createElement('div');
+  levelBox.id = 'level-box';
+  levelBox.style.cssText = `
+    background: #ffffff;
+    border: 1px solid #c7cdd1;
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 16px;
+    font-family: -apple-system, "Segoe UI", Helvetica, sans-serif;
+  `;
+
+  levelBox.innerHTML = `
+    <!-- Title row -->
+    <div style="
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    ">
+      <h2 style="
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: #2d3b45;
+      ">Progress</h2>
+      <span style="
+        font-size: 12px;
+        color: #6b7883;
+      ">Level ${level}</span>
+    </div>
+
+    <!-- XP bar -->
+    <div style="
+      background: #e8eaed;
+      border-radius: 10px;
+      height: 18px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    ">
+      <div id="level-xp-fill" style="
+        background: linear-gradient(90deg, #2196F3, #4CAF50);
+        height: 100%;
+        width: ${progressPercent}%;
+        border-radius: 10px;
+        transition: width 0.6s ease;
+      "></div>
+    </div>
+
+    <!-- XP text -->
+    <div style="
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #6b7883;
+      margin-bottom: 14px;
+    ">
+      <span>${currentXP} / ${xpForNextLevel} XP</span>
+      <span>${progressPercent}%</span>
+    </div>
+
+    <!-- Divider -->
+    <hr style="border: none; border-top: 1px solid #e8eaed; margin: 0 0 12px 0;">
+
+    <!-- Earn XP section -->
+    <div>
+      <h3 style="
+        margin: 0 0 8px 0;
+        font-size: 12px;
+        font-weight: 600;
+        color: #2d3b45;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      ">Earn XP</h3>
+
+      <div id="level-tasks" style="
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      ">
+        <div style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 6px 8px;
+          background: #f5f6f7;
+          border-radius: 4px;
+          font-size: 12px;
+        ">
+          <span style="color: #2d3b45;">Submit HW1</span>
+          <span style="
+            color: #4CAF50;
+            font-weight: 600;
+            font-size: 11px;
+          ">+50 XP</span>
+        </div>
+
+        <div style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 6px 8px;
+          background: #f5f6f7;
+          border-radius: 4px;
+          font-size: 12px;
+        ">
+          <span style="color: #2d3b45;">Daily Quiz</span>
+          <span style="
+            color: #4CAF50;
+            font-weight: 600;
+            font-size: 11px;
+          ">+20 XP</span>
+        </div>
+
+        <div style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 6px 8px;
+          background: #f5f6f7;
+          border-radius: 4px;
+          font-size: 12px;
+        ">
+          <span style="color: #2d3b45;">Score 90%+ on Quiz 2</span>
+          <span style="
+            color: #4CAF50;
+            font-weight: 600;
+            font-size: 11px;
+          ">+100 XP</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Insert at the top of the right sidebar, above To Do
+  rightSide.insertBefore(levelBox, rightSide.firstChild);
+}
+
+// ── Run it ──
+// Canvas loads content dynamically, so we wait for the sidebar to exist
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', injectLevelBox);
+} else {
+  injectLevelBox();
+}
+
+// Fallback: if Canvas loads the sidebar after DOMContentLoaded (it sometimes does),
+// watch for it with a short retry
+let retryCount = 0;
+const retryInterval = setInterval(() => {
+  if (document.getElementById('level-box') || retryCount > 10) {
+    clearInterval(retryInterval);
+    return;
+  }
+  injectLevelBox();
+  retryCount++;
+}, 500);
 // This function adds the quizzes and flashcards buttons to each course card in the dashboard
 function addCourseButtons(containers) {
   containers.forEach(function(container) {
