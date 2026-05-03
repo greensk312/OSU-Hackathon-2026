@@ -64,8 +64,11 @@ function buildTopicSelection(analysis) {
         topicList.appendChild(btn);
     });
 
-    document.getElementById('general-quiz-btn')
-        .addEventListener('click', () => startQuiz(analysis, null));
+    document.getElementById('new-quiz-btn').onclick = () => {
+        const topicList = document.getElementById('topic-list');
+        topicList.querySelectorAll('button:not(#general-quiz-btn)').forEach(b => b.remove());
+        init();
+    }; 
 
     showScreen('selection');
 }
@@ -95,11 +98,13 @@ async function startQuiz(analysis, topic) {
 let questions = [];
 let currentIndex = 0;
 let score = 0;
+let xp = 0;
 
 function renderQuiz(quizData) {
   questions = quizData.questions;
   currentIndex = 0;
   score = 0;
+  xp = 0;
   showScreen('quiz');
   showQuestion();
 }
@@ -174,19 +179,25 @@ function handleAnswer(selectedLetter, selectedBtn) {
 }
 
 function showResults() {
+  const xp = score * 5;
   document.getElementById('score-text').textContent =
-    `You got ${score} out of ${questions.length} correct.`;
+    `You got ${score} out of ${questions.length} correct. You earned ${xp} experience!`;
 
   window.postMessage({
     type: 'QUIZ_COMPLETE',
     score: score,
-    total: questions.length
+    total: questions.length,
+    xp: xp
   }, '*')
 
   document.getElementById('retry-btn').onclick = () => {
     renderQuiz({ questions });
   };
 
+  document.getElementById('new-quiz-btn').onclick = () => {
+    document.getElementById('topic-list').innerHTML = '';
+    init();
+  };
   showScreen('results');
 }
 
