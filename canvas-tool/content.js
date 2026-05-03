@@ -342,8 +342,8 @@ function addCourseButtons(containers) {
     container.style.height = "auto"
     container.style.overflow = "visible"
 
-    let quizButton = document.createElement("a") // This anchor tag is a link to the URL quiz.html when clicked. This is our "button"
-    quizButton.textContent = "Quizzes" // This is the name of the button
+    let quizButton = document.createElement("a")         // This anchor tag is a link to the URL quiz.html when clicked. This is our "button"
+    quizButton.textContent = "Quizzes"                   // This is the name of the button
     quizButton.href = chrome.runtime.getURL("quiz.html") // This is the file/URL that the button will take to you
     quizButton.style.cssText = "display:block; padding:4px 8px; background:#0770A3; color:white; border-radius:4px; text-decoration:none; font-size:12px; margin-top:4px;"
 
@@ -352,12 +352,12 @@ function addCourseButtons(containers) {
     flashCardButton.href = chrome.runtime.getURL("flashcard.html")
     flashCardButton.style.cssText = "display:block; padding:4px 8px; background:#0770A3; color:white; border-radius:4px; text-decoration:none; font-size:12px; margin-top:4px;"
 
-    container.appendChild(quizButton) // I think this is for the mutation observer below
+    container.appendChild(quizButton)      // I think this is for the mutation observer below
     container.appendChild(flashCardButton) //  "  "
   })
 }
 
-let observer = new MutationObserver(function() {
+let observer = new MutationObserver(function() {  // This observer function 
   let containers = document.querySelectorAll(".ic-DashboardCard__action-container")
   if(containers.length > 0) {
     observer.disconnect()
