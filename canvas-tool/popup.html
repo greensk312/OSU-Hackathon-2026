@@ -1,50 +1,114 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Canvas Multitool</title>
-  <link rel="stylesheet" href="popup.css">
-</head>
-<body>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-  <!-- Setup screen: shown when no API token is saved yet -->
-  <div id="setup-view" class="view">
-    <div class="header">
-      <h1>Canvas Multitool</h1>
-      <p class="subtitle">Connect your Canvas account to get started.</p>
+      body {
+        width: 320px;
+        font-family: sans-serif;
+        background: #f9fafb;
+      }
+
+      /* TOKEN SETUP SCREEN */
+      #setup-screen {
+        padding: 24px;
+      }
+
+      #setup-screen h2 {
+        font-size: 16px;
+        margin-bottom: 6px;
+        color: #111;
+      }
+
+      #setup-screen p {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 16px;
+        line-height: 1.5;
+      }
+
+      input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 13px;
+        margin-bottom: 10px;
+      }
+
+      button {
+        width: 100%;
+        padding: 10px;
+        background: #6366f1;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #4f46e5;
+      }
+
+      .error {
+        font-size: 12px;
+        color: #ef4444;
+        margin-top: 8px;
+      }
+
+      /* ALREADY SET UP SCREEN */
+      #ready-screen {
+        padding: 24px;
+        display: none;
+      }
+
+      #ready-screen h2 {
+        font-size: 16px;
+        margin-bottom: 6px;
+        color: #111;
+      }
+
+      #ready-screen p {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 16px;
+        line-height: 1.5;
+      }
+
+      #clear-btn {
+        background: #ef4444;
+      }
+
+      #clear-btn:hover {
+        background: #dc2626;
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- Shown when no token is saved -->
+    <div id="setup-screen">
+      <h2>Welcome to Canvas Study Tool</h2>
+      <p>Paste your Canvas API token to get started. You can generate one in Canvas under Account → Settings → Approved Integrations.</p>
+      <input type="password" id="token-input" placeholder="Paste your API token here" />
+      <button id="save-btn">Save Token</button>
+      <p class="error" id="error-msg"></p>
     </div>
-    <div class="setup-form">
-      <label for="api-url">Canvas URL</label>
-      <input type="text" id="api-url" placeholder="canvas.instructure.com" value="canvas.instructure.com">
 
-      <label for="api-token">API Token</label>
-      <input type="password" id="api-token" placeholder="Paste your access token">
-
-      <p class="help-text">
-        Generate a token: Account → Settings → New Access Token
-      </p>
-
-      <button id="save-btn">Connect</button>
-      <p id="setup-error" class="error hidden"></p>
-    </div>
-  </div>
-
-  <!-- Main screen: shown after successful connection -->
-  <div id="main-view" class="view hidden">
-    <div class="header">
-      <h1>Canvas Multitool</h1>
-      <div class="header-actions">
-        <span id="user-name" class="user-name"></span>
-        <button id="disconnect-btn" class="btn-small">Disconnect</button>
-      </div>
+    <!-- Shown when token is already saved -->
+    <div id="ready-screen">
+      <h2>Canvas Study Tool</h2>
+      <p>Your token is saved and the extension is active on Canvas pages.</p>
+      <button id="clear-btn">Clear Saved Token</button>
     </div>
 
-    <div id="courses-list" class="courses-list">
-      <p class="loading">Loading courses...</p>
-    </div>
-  </div>
-
-  <script src="popup.js"></script>
-</body>
+    <script src="popup.js"></script>
+  </body>
 </html>
