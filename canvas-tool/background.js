@@ -1,35 +1,19 @@
-const GEMINI_API_KEY = "AIzaSyCDAv9tBkSyho7pkMsr3A_aKPkcncOm5NY"; // set api key to a constant
-// Updated URL to use the 2.5 Flash model
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+// background.js
+// Service worker — handles messages from content scripts
+// Gemini logic lives in gemini/gemini-api.js but service workers
+// can't use ES modules, so we importScripts or inline the call.
+// For now, keeping the fetch inline but routing through a clean handler.
+
+import { testConnection } from './gemini/gemini-api.js';
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === "TEST_GEMINI") {
-    testGeminiConnection().then(sendResponse);
-    return true;
+  if (request.type === 'TEST_GEMINI') {
+    testConnection().then(sendResponse);
+    return true; // keep message channel open for async response
   }
+
+  // Future message types:
+  // - GENERATE_QUIZ
+  // - GENERATE_FLASHCARDS
+  // - ANALYZE_CONTENT
 });
-
-async function testGeminiConnection() { // test connection to GEMINI 
-  try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{ text: "Respond with the word 'Connected' and nothing else." }] // prompt to gemini model
-        }]
-      })
-    });
-
-    const data = await response.json();
-    
-    if (data.error) {
-      return { success: false, error: data.error.message };
-    }
-
-    const text = data.candidates[0].content.parts[0].text.trim();
-    return { success: true, message: text };
-  } catch (error) {
-    return { success: false, error: "Network error: " + error.message };
-  }
-}
