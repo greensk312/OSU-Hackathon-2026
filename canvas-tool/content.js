@@ -151,7 +151,6 @@ testBtn.addEventListener('click', () => {
   });
 });
 
-
 // ── Level Guy: Progress Bar Box ──
 // Injects a level/XP progress box above the To Do sidebar on the Canvas dashboard
 
@@ -335,9 +334,14 @@ const retryInterval = setInterval(() => {
   injectLevelBox();
   retryCount++;
 }, 500);
+
+// Course Card Buttons
 // This function adds the quizzes and flashcards buttons to each course card in the dashboard
 function addCourseButtons(containers) {
   containers.forEach(function(container) {
+    container.style.height = "auto"
+    container.style.overflow = "visible"
+
     let quizButton = document.createElement("a") // This anchor tag is a link to the URL quiz.html when clicked. This is our "button"
     quizButton.textContent = "Quizzes" // This is the name of the button
     quizButton.href = chrome.runtime.getURL("quiz.html") // This is the file/URL that the button will take to you
