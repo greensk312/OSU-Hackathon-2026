@@ -13,10 +13,13 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "study-material/quiz.html",
         "study-material/flashcards.html",
+        "study-material/flashcards.css",
+        "study-material/flashcards.js",
+        "study-material/quiz.html",
         "study-material/quiz.css",
         "study-material/quiz.js"
+        
       ],
       "matches": ["https://*.instructure.com/*"]
     }

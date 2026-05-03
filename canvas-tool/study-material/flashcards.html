@@ -1,7 +1,59 @@
 <!DOCTYPE html>
 <html>
-    <head><title>Flashcards</title></head>
-    <body>
-        <h1>This is where the flashcards will be</h1>
-    </body>
+<head>
+    <title>Flashcards</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+    <!-- Selection -->
+    <div id="selection-screen">
+        <h2>What topic would you like flashcards on?</h2>
+        <div id="topic-list" style="display:none;">
+            <button id="general-quiz-btn">🎲 General Flashcards</button>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading-screen" style="display:none;">
+        <div id="spinner"></div>
+        <p>Generating flashcards…</p>
+    </div>
+
+    <!-- Card screen -->
+    <div id="card-screen" style="display:none;">
+        <div id="deck-title"></div>
+        <div id="card-counter"></div>
+        <div id="card-category"></div>
+
+        <div class="card-viewport">
+            <div id="card-inner">
+                <div class="card-face" id="card-front">
+                    <div class="card-label">Question</div>
+                    <div id="card-front-text"></div>
+                </div>
+                <div class="card-face" id="card-back">
+                    <div class="card-label">Answer</div>
+                    <div id="card-back-text"></div>
+                </div>
+            </div>
+        </div>
+
+        <p class="tap-hint">Tap card to flip</p>
+
+        <div class="nav-row">
+            <button id="prev-btn">← Prev</button>
+            <button id="restart-btn">↺ Restart</button>
+            <button id="next-btn">Next →</button>
+        </div>
+    </div>
+
+    <!-- Error -->
+    <div id="error-screen" style="display:none;">
+        <h2>Error</h2>
+        <p id="error-text"></p>
+    </div>
+
+    <script src="flashcards.js"></script>
+</body>
 </html>
