@@ -1,32 +1,3 @@
-// =============================================================================
-// content.js — The "main" entry point for the Canvas Multitool extension
-// =============================================================================
-//
-// WHAT THIS FILE DOES:
-//   Think of this like main() in a C++ program. It doesn't contain the actual
-//   feature logic — instead, it calls functions defined in other files
-//   (other "classes") that each handle one specific feature.
-//
-// HOW IT WORKS WITH OTHER FILES:
-//   Chrome extensions can't use ES module imports (import/export) in content
-//   scripts. Instead, manifest.json lists multiple JS files to load in order:
-//
-//     1. level-system/xp-calculator.js  — defines fetchXPState(), getCachedXPState()
-//     2. level-system/level-box.js      — defines injectLevelBox(), injectLevelBoxLoading(), etc.
-//     3. study-material/course-buttons.js — defines addCourseButtons(), observeCourseCards()
-//     4. content.js (this file)          — calls all of the above
-//
-//   Because they're all loaded into the same page context, functions from
-//   earlier scripts are globally available here — similar to how #include
-//   works in C++ (the functions are in scope by the time this file runs).
-//
-// CANVAS DOM NOTE:
-//   Canvas is a partially single-page app. It doesn't always have the full
-//   DOM ready at DOMContentLoaded — some elements (like the sidebar, course
-//   cards) load asynchronously via JavaScript after the initial page load.
-//   That's why we use retry loops and MutationObservers throughout.
-// =============================================================================
-
 
 analyzeAllCourses();
 
@@ -47,20 +18,6 @@ window.addEventListener('message', (event) => {
   }
 });
 
-// =============================================================================
-// 2. LEVEL SYSTEM — Inject the XP progress box on the dashboard
-// =============================================================================
-//
-// Flow:
-//   1. Wait for the sidebar (#right-side) to exist
-//   2. Check for a saved token
-//   3. If no token → show "no token" state
-//   4. If token exists → show loading state → try cached data first →
-//      fetch fresh data from Canvas API → render or show error
-//
-// The old version was synchronous (getXPState returned hardcoded data).
-// Now it's async because we're making real API calls, so the orchestration
-// uses Promises and the loading/error states from level-box.js.
 
 function initLevelSystem() {
   // Safety check: make sure level-box.js loaded
@@ -151,34 +108,7 @@ var levelRetryInterval = setInterval(function () {
   levelRetryCount++;
 }, 500);
 
-
-// =============================================================================
-// 3. COURSE CARD BUTTONS — Add Quiz & Flashcard links to each course card
-// =============================================================================
-// Calls observeCourseCards() from study-material/course-buttons.js.
-// That function watches the DOM for Canvas course cards to appear and
-// injects our buttons onto them.
-//
-// We call this from here (content.js) rather than putting the observer
-// directly in course-buttons.js because content.js is the orchestrator —
-// it decides WHEN each feature initializes, while the feature files
-// define HOW they work. Same pattern as calling class methods from main().
-
-if (typeof observeCourseCards === 'function') {
-  observeCourseCards();
-}
-
 observeCourseHomeSidebar();
-
-// =============================================================================
-// 4. TOKEN MODAL — Prompt the user to enter their Canvas API token
-// =============================================================================
-// This is the only feature that lives directly in content.js because it's
-// a one-time setup flow, not a recurring feature. It creates a modal overlay
-// on the Canvas page with an input field and save button.
-//
-// The token gets saved to chrome.storage.local, which is shared across all
-// parts of the extension (content scripts, popup, background worker).
 
 function showTokenModal() {
   if (document.getElementById('cst-modal-overlay')) return;
