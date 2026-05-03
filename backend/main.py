@@ -69,6 +69,14 @@ def generate_quiz(body: QuizRequest):
 
     response = model.generate_content(prompt)
     quiz = json.loads(response.text)
+
+    raw = response.text.strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1] 
+        raw = raw.rsplit("```", 1)[0]
+    quiz = json.loads(raw)
+
+
     return quiz
     
 @app.post("/generate/flashcards")
@@ -96,7 +104,13 @@ def generate_flashcards(body: FlashcardRequest):
     """
 
     response = model.generate_content(prompt)
-    flashcards = json.loads(response.text)
+
+    raw = response.text.strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1] 
+        raw = raw.rsplit("```", 1)[0]
+    flashcards = json.loads(raw)
+
     return flashcards
 
 @app.post("/analyze/content")
@@ -127,5 +141,11 @@ def analyze_content(body: ClassData):
     """
 
     response = model.generate_content(prompt)
-    analysis = json.loads(response.text)
+
+    raw = response.text.strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1] 
+        raw = raw.rsplit("```", 1)[0]
+    analysis = json.loads(raw)
+
     return analysis
