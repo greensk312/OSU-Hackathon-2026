@@ -16,39 +16,38 @@ function showScreen(name) {
 function getCourseId() {
     const panel = document.getElementById('cst-study-panel');
     if (panel) return panel.dataset.courseId;
-
     return null;
 }
 
 function loadCachedAnalysis(courseId) {
     return new Promise((resolve) => {
         const panel = document.getElementById('cst-study-panel');
-        if(panel && panel.dataset.analysis){
+        if (panel && panel.dataset.analysis) {
             resolve(JSON.parse(panel.dataset.analysis));
             return;
         }
-    })
+    });
 }
 
 async function init() {
-  const courseId = getCourseId();
+    const courseId = getCourseId();
 
-  if (!courseId) {
-    document.getElementById('error-text').textContent = 'No course ID found.';
-    showScreen('error');
-    return;
-  }
+    if (!courseId) {
+        document.getElementById('error-text').textContent = 'No course ID found.';
+        showScreen('error');
+        return;
+    }
 
-  const analysis = await loadCachedAnalysis(courseId);
+    const analysis = await loadCachedAnalysis(courseId);
 
-  if (!analysis) {
-    document.getElementById('error-text').textContent = 
-      'No analysis found for this course yet. Try again in a moment.';
-    showScreen('error');
-    return;
-  }
+    if (!analysis) {
+        document.getElementById('error-text').textContent =
+            'No analysis found for this course yet. Try again in a moment.';
+        showScreen('error');
+        return;
+    }
 
-  buildTopicSelection(analysis);
+    buildTopicSelection(analysis);
 }
 
 function buildTopicSelection(analysis) {
@@ -56,7 +55,6 @@ function buildTopicSelection(analysis) {
     topicList.style.display = 'block';
 
     const terms = analysis.key_terms || [];
-
     terms.forEach(term => {
         const btn = document.createElement('button');
         btn.textContent = term;
@@ -64,141 +62,136 @@ function buildTopicSelection(analysis) {
         topicList.appendChild(btn);
     });
 
-    document.getElementById('new-quiz-btn').onclick = () => {
-        const topicList = document.getElementById('topic-list');
-        topicList.querySelectorAll('button:not(#general-quiz-btn)').forEach(b => b.remove());
-        init();
-    }; 
-
     showScreen('selection');
 }
 
 async function startQuiz(analysis, topic) {
-  showScreen('loading');
+    showScreen('loading');
 
-  try {
-    const res = await fetch(`${BACKEND}/generate/quiz`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ analysis, topic })
-    });
+    try {
+        const res = await fetch(`${BACKEND}/generate/quiz`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ analysis, topic })
+        });
 
-    if (!res.ok) throw new Error(`Backend error: ${res.status}`);
+        if (!res.ok) throw new Error(`Backend error: ${res.status}`);
 
-    const quizData = await res.json();
-    renderQuiz(quizData);
+        const quizData = await res.json();
+        renderQuiz(quizData);
 
-  } catch (err) {
-    document.getElementById('error-text').textContent = 
-      'Failed to generate quiz. Is the backend awake?';
-    showScreen('error');
-  }
+    } catch (err) {
+        document.getElementById('error-text').textContent =
+            'Failed to generate quiz. Is the backend awake?';
+        showScreen('error');
+    }
 }
 
 let questions = [];
 let currentIndex = 0;
 let score = 0;
-let xp = 0;
 
 function renderQuiz(quizData) {
-  questions = quizData.questions;
-  currentIndex = 0;
-  score = 0;
-  xp = 0;
-  showScreen('quiz');
-  showQuestion();
+    questions = quizData.questions;
+    currentIndex = 0;
+    score = 0;
+    showScreen('quiz');
+    showQuestion();
 }
 
 function showQuestion() {
-  const q = questions[currentIndex];
+    const q = questions[currentIndex];
 
-  document.getElementById('question-counter').textContent =
-    `Question ${currentIndex + 1} of ${questions.length}`;
-  document.getElementById('question-text').textContent = q.question;
+    document.getElementById('question-counter').textContent =
+        `Question ${currentIndex + 1} of ${questions.length}`;
+    document.getElementById('question-text').textContent = q.question;
 
-  // Clear old choices
-  const container = document.getElementById('choices-container');
-  container.innerHTML = '';
+    const container = document.getElementById('choices-container');
+    container.innerHTML = '';
 
-  const explanation = document.getElementById('explanation');
-  explanation.style.display = 'none';
+    const explanation = document.getElementById('explanation');
+    explanation.style.display = 'none';
 
-  // Build a button for each option
-  Object.entries(q.options).forEach(([letter, text]) => {
-    const btn = document.createElement('button');
-    btn.textContent = `${letter}: ${text}`;
-    btn.addEventListener('click', () => handleAnswer(letter, btn));
-    container.appendChild(btn);
-  });
+    Object.entries(q.options).forEach(([letter, text]) => {
+        const btn = document.createElement('button');
+        btn.textContent = `${letter}: ${text}`;
+        btn.addEventListener('click', () => handleAnswer(letter, btn));
+        container.appendChild(btn);
+    });
 
-  // Reset next button
-  const nextBtn = document.getElementById('next-btn');
-  nextBtn.disabled = true;
-  nextBtn.onclick = () => {
-    currentIndex++;
-    if (currentIndex < questions.length) {
-      showQuestion();
-    } else {
-      showResults();
-    }
-  };
+    const nextBtn = document.getElementById('next-btn');
+    nextBtn.disabled = true;
+    nextBtn.onclick = () => {
+        currentIndex++;
+        if (currentIndex < questions.length) {
+            showQuestion();
+        } else {
+            showResults();
+        }
+    };
 }
 
 function handleAnswer(selectedLetter, selectedBtn) {
-  const q = questions[currentIndex];
-  const correct = q.correct_answer;
+    const q = questions[currentIndex];
+    const correct = q.correct_answer;
 
-  // Lock all buttons so you can't change answer
-  const allBtns = document.querySelectorAll('#choices-container button');
-  allBtns.forEach(b => b.disabled = true);
+    const allBtns = document.querySelectorAll('#choices-container button');
+    allBtns.forEach(b => b.disabled = true);
 
-  if (selectedLetter === correct) {
-    score++;
-    selectedBtn.style.background = 'green';
-    selectedBtn.style.color = 'white';
-  } else {
-    selectedBtn.style.background = 'red';
-    selectedBtn.style.color = 'white';
-    // Highlight the correct answer
-    allBtns.forEach(b => {
-      if (b.textContent.startsWith(correct)) {
-        b.style.background = 'green';
-        b.style.color = 'white';
-      }
-    });
-  }
+    if (selectedLetter === correct) {
+        score++;
+        selectedBtn.style.background = 'green';
+        selectedBtn.style.color = 'white';
+    } else {
+        selectedBtn.style.background = 'red';
+        selectedBtn.style.color = 'white';
+        allBtns.forEach(b => {
+            if (b.textContent.startsWith(correct)) {
+                b.style.background = 'green';
+                b.style.color = 'white';
+            }
+        });
+    }
 
-  // Show explanation
-  const explanation = document.getElementById('explanation');
-  if (explanation) {
-    explanation.textContent = q.explanation;
-    explanation.style.display = 'block';
-  }
+    const explanation = document.getElementById('explanation');
+    if (explanation) {
+        explanation.textContent = q.explanation;
+        explanation.style.display = 'block';
+    }
 
-  document.getElementById('next-btn').disabled = false;
+    document.getElementById('next-btn').disabled = false;
 }
 
 function showResults() {
-  const xp = score * 5;
-  document.getElementById('score-text').textContent =
-    `You got ${score} out of ${questions.length} correct. You earned ${xp} experience!`;
+    const xp = score * 5;
+    document.getElementById('score-text').textContent =
+        `You got ${score} out of ${questions.length} correct. You earned ${xp} experience!`;
 
-  window.postMessage({
-    type: 'QUIZ_COMPLETE',
-    score: score,
-    total: questions.length,
-    xp: xp
-  }, '*')
+    window.postMessage({
+        type: 'QUIZ_COMPLETE',
+        score: score,
+        total: questions.length,
+        xp: xp
+    }, '*');
 
-  document.getElementById('retry-btn').onclick = () => {
-    renderQuiz({ questions });
-  };
-
-  document.getElementById('new-quiz-btn').onclick = () => {
-    document.getElementById('topic-list').innerHTML = '';
-    init();
-  };
-  showScreen('results');
+    showScreen('results');
 }
+
+// ── Wire up static buttons once ──
+document.getElementById('general-quiz-btn').addEventListener('click', () => {
+    const panel = document.getElementById('cst-study-panel');
+    const analysis = JSON.parse(panel.dataset.analysis);
+    startQuiz(analysis, null);
+});
+
+document.getElementById('retry-btn').onclick = () => {
+    renderQuiz({ questions });
+};
+
+document.getElementById('new-quiz-btn').onclick = () => {
+    document.querySelectorAll('#topic-list button:not(#general-quiz-btn)')
+        .forEach(b => b.remove());
+    init();
+};
 
 init();
